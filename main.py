@@ -19,8 +19,9 @@ def riro_login(id: str, password: str):
     }
 
     SLEEP_SEC = 2
+    MAX_RETRIES = 5
 
-    while True:
+    for _ in range(MAX_RETRIES):
         try:
             try:
                 s.post("https://iscience.riroschool.kr/user.php?action=user_logout", timeout=10)
@@ -132,6 +133,11 @@ def riro_login(id: str, password: str):
         except (requests.RequestException, RuntimeError) as e:
             print("Error:", e)
             time.sleep(SLEEP_SEC)
+
+    return {
+        "status": "error",
+        "message": "인증 서버와 통신 중 오류가 발생했습니다."
+    }
 
 if __name__ == "__main__":
     import uvicorn
