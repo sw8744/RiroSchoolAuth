@@ -63,35 +63,69 @@ def riro_login(id: str, password: str):
             html = r2.text
             soup = BeautifulSoup(html, "html.parser")
 
-            el_student = soup.select_one("span.m_level3")
-            if not el_student:
-                el_student = soup.select_one("span.m_level1")
-            inputs = soup.select(".input_disabled")
+            account_type = "normal"
+            if soup.select(".td_title")[0].get_text() == "통합아이디":
+                account_type = "integrated"
 
-            if not el_student or len(inputs) < 2:
-                raise RuntimeError("Cannot parse user info")
+            if account_type == "normal":
+                el_student = soup.select_one("span.m_level3")
+                if not el_student:
+                    el_student = soup.select_one("span.m_level1")
+                inputs = soup.select(".input_disabled")
 
-            student = el_student.get_text(strip=True) or ""
-            name = (inputs[0].get_text(strip=True) or "")
-            student_number_raw = (inputs[1].get_text(strip=True) or "")
+                if not el_student or len(inputs) < 2:
+                    raise RuntimeError("Cannot parse user info")
 
-            if len(student_number_raw) >= 3:
-                student_number = student_number_raw[0] + student_number_raw[2:]
-            else:
-                student_number = student_number_raw
+                student = el_student.get_text(strip=True) or ""
+                name = (inputs[0].get_text(strip=True) or "")
+                student_number_raw = (inputs[1].get_text(strip=True) or "")
 
-            generation = 0
-            if len(id) >= 2 and id[:2].isdigit():
-                generation = int("20" + id[:2]) - 1994 + 1
+                if len(student_number_raw) >= 3:
+                    student_number = student_number_raw[0] + student_number_raw[2:]
+                else:
+                    student_number = student_number_raw
 
-            if all([name, student_number, student]) and generation > 0:
-                return {
-                    "status": "success",
-                    "name": name,
-                    "student_number": student_number,
-                    "generation": generation,
-                    "student": student,
-                }
+                generation = 0
+                if len(id) >= 2 and id[:2].isdigit():
+                    generation = int("20" + id[:2]) - 1994 + 1
+
+                if all([name, student_number, student]) and generation > 0:
+                    return {
+                        "status": "success",
+                        "name": name,
+                        "student_number": student_number,
+                        "generation": generation,
+                        "student": student,
+                    }
+
+            elif account_type == "integrated":
+                riro_id = soup.select(".elem_fix")[0].get_text()[:8]
+                student = soup.select(".elem_fix")[0].get_text()[15:-1]
+
+                inputs = soup.select(".input_disabled")
+
+                name = (inputs[0].get_text(strip=True) or "")
+                student_number_raw = (inputs[1].get_text(strip=True) or "")
+
+                if len(student_number_raw) >= 3:
+                    student_number = student_number_raw[0] + student_number_raw[2:]
+                else:
+                    student_number = student_number_raw
+
+                generation = 0
+                if len(riro_id) >= 2 and riro_id[:2].isdigit():
+                    generation = int("20" + riro_id[:2]) - 1994 + 1
+
+                print(riro_id, student, name, student_number, generation)
+                if all([name, student_number, student]) and generation > 0:
+                    return {
+                        "status": "success",
+                        "name": name,
+                        "student_number": student_number,
+                        "generation": generation,
+                        "student": student,
+                    }
+                print("통합아이디")
 
             raise RuntimeError("Data missing. Retrying...")
 
